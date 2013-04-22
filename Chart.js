@@ -720,11 +720,29 @@ window.Chart = function(context){
 			for (var i=0; i<data.length; i++){
 				var segmentAngle = rotateAnimation * ((data[i].value/segmentTotal) * (Math.PI*2));
 				ctx.beginPath();
-				ctx.arc(width/2,height/2,scaleAnimation * pieRadius,cumulativeAngle,cumulativeAngle + segmentAngle);
+				ctx.arc(width/2,height/2,scaleAnimation * pieRadius / 2,cumulativeAngle,cumulativeAngle + segmentAngle);
 				ctx.lineTo(width/2,height/2);
 				ctx.closePath();
 				ctx.fillStyle = data[i].color;
 				ctx.fill();
+
+				// XYZXYZ
+				if( typeof data[i].label != "undefined" ) {
+					var textAngle = ( ( cumulativeAngle +  ( segmentAngle / 2 ) ) ) - ( 1 * Math.PI / 64 ) ;
+					var degAngle = Math.floor(textAngle / Math.PI * 2 * 360);
+					var textx = ( width/2 ) + Math.cos(textAngle) * pieRadius * .75;
+					var texty = ( height/2 ) + Math.sin(textAngle) * pieRadius * .75;
+					// ctx.fillStyle = "#000000";
+					if( textx < ( width/2) ) {
+						ctx.textAlign = "right";
+					} else if ( /* texty > ( height/2 ) && */
+								Math.abs( textx - ( width/2 ) ) < ( width / 8 ) ) {
+						ctx.textAlign = "center";
+					} else {
+						ctx.textAlign = "left";
+					}
+					ctx.fillText(data[i].label,textx,texty)
+				}
 				
 				if(config.segmentShowStroke){
 					ctx.lineWidth = config.segmentStrokeWidth;

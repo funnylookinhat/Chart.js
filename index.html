@@ -1,0 +1,66 @@
+<html>
+	<body>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+		<script src="Chart.js" type="text/javascript"></script>
+		<style>
+			* {
+				-moz-box-sizing: border-box;
+				-webkit-box-sizing: border-box;
+				box-sizing: border-box;
+				outline: none;
+			}
+			body {
+				background: #414141;
+			}
+			.chart-wrapper {
+				border: 1px solid #111111;
+				border-radius: 10px;
+				-moz-border-radius: 10px;
+				-webkit-border-radius: 10px;
+				background: #ffffff;
+				width: 600px;
+				height: 400px;
+				padding: 10px;
+				margin: 50px auto;
+			}
+		</style>
+
+		<div class="chart-wrapper">
+			<canvas id="pie" width="580" height="380"></canvas>
+		</div>
+
+		<script type="text/javascript">
+			function testPie() {
+				var colors = [
+					'#FF7373',
+					'#5CCCCC',
+					'#FF7400',
+					'#269926',
+					'#A60000',
+					'#1D7373',
+					'#FF9640',
+					'#67E667'
+				];
+				var data = [];
+
+				for( var i = 0; i < 7; i++ ) {
+					data.push({
+						value: 50 * Math.pow(1.2,i),
+						color: colors[ i % colors.length ],
+						label: colors[ i % colors.length ]
+					});	
+				}
+
+				var pieChart = new Chart($('#pie').get(0).getContext('2d')).Pie(data);
+			}
+
+			$(function() {
+				testPie();
+				$('#pie').click(function() {
+					testPie();
+				});
+			});
+		</script>
+
+	</body>
+</html>
