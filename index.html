@@ -26,38 +26,101 @@
 		</style>
 
 		<div class="chart-wrapper">
-			<canvas id="pie" width="580" height="380"></canvas>
+			<canvas id="pie" width="580" height="380" rel="3"></canvas>
 		</div>
 
-		<script type="text/javascript">
-			function testPie() {
-				var colors = [
-					'#FF7373',
-					'#5CCCCC',
-					'#FF7400',
-					'#269926',
-					'#A60000',
-					'#1D7373',
-					'#FF9640',
-					'#67E667'
-				];
-				var data = [];
+		<div class="chart-wrapper">
+			<canvas id="polar" width="580" height="380" rel="3"></canvas>
+		</div>
 
-				for( var i = 0; i < 7; i++ ) {
+		<div class="chart-wrapper">
+			<canvas id="doughnut" width="580" height="380" rel="3"></canvas>
+		</div>
+
+
+
+		<script type="text/javascript">
+			var colors = [
+				'#FF7373',
+				'#5CCCCC',
+				'#FF7400',
+				'#269926',
+				'#A60000',
+				'#1D7373',
+				'#FF9640',
+				'#67E667'
+			];
+			var items = [
+				'Candy Bars',
+				'Burgers',
+				'Ice Cream Cones',
+				'Hotdogs',
+				'French Fries',
+				'Waffles',
+				'Corndogs',
+				'Beers'
+			];
+
+			var options = {
+				chartScale: 0.8,
+				dataLabelVisible: true,
+			};
+
+			function generateRoundData(count, startVal, incUp, incDown) {
+				var data = [];
+				startVal = startVal || 50;
+				incUp = incUp || 1.05;
+				incDown = incDown || 0.9;
+
+				for( var i = 0; i < ( Math.floor( count / 2 ) + (count % 2) ); i++ ) {
+					startVal = startVal * Math.pow(incUp,i);
 					data.push({
-						value: 50 * Math.pow(1.2,i),
+						value: startVal,
 						color: colors[ i % colors.length ],
-						label: colors[ i % colors.length ]
-					});	
+						label: items[ i % items.length ]+' ('+startVal+')'//+' $'+parseFloat(maxVal).toFixed(2)
+					});
+				}
+				for( var i = 0; i < ( Math.floor( count / 2 ) ); i++ ) {
+					startVal = startVal * Math.pow(incDown,i);
+					data.push({
+						value: startVal,
+						color: colors[ ( i + ( Math.floor( count / 2 ) + (count % 2) ) ) % colors.length ],
+						label: items[ ( i + ( Math.floor( count / 2 ) + (count % 2) ) ) % items.length ]+' ('+startVal+')'//+' $'+parseFloat(maxVal).toFixed(2)
+					});
 				}
 
-				var pieChart = new Chart($('#pie').get(0).getContext('2d')).Pie(data);
+				return data;
+			}
+
+			function generatePie() {
+				var pieChart = new Chart($('#pie').get(0).getContext('2d')).Pie(generateRoundData(parseInt($('#pie').attr('rel')),50,1.4,.8),options);
+				$('#pie').attr('rel',parseInt($('#pie').attr('rel'))+2);
+			}
+
+			function generatePolar() {
+				var polarChart = new Chart($('#polar').get(0).getContext('2d')).PolarArea(generateRoundData(parseInt($('#polar').attr('rel')),10,1.4,.8),options);
+				$('#polar').attr('rel',parseInt($('#polar').attr('rel'))+2);
+			}
+
+			function generateDoughnut() {
+				var doughnutChart = new Chart($('#doughnut').get(0).getContext('2d')).Doughnut(generateRoundData(parseInt($('#doughnut').attr('rel')),50),options);
+				$('#doughnut').attr('rel',parseInt($('#doughnut').attr('rel'))+2);
 			}
 
 			$(function() {
-				testPie();
+				generatePie();
 				$('#pie').click(function() {
-					testPie();
+					generatePie();
+				});
+
+				generatePolar();
+				$('#polar').click(function() {
+					generatePolar();
+				});
+
+				generateDoughnut();
+				$('#doughnut').click(function() {
+					generateDoughnut();
 				});
 			});
 		</script>

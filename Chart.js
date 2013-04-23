@@ -12,7 +12,9 @@ window.Chart = function(context){
 
 	var chart = this;
 	
-	
+	var labelCanvas;
+	var labelContext;
+
 	//Easing functions adapted from Robert Penner's easing equations
 	//http://www.robertpenner.com/easing/
 	
@@ -190,7 +192,16 @@ window.Chart = function(context){
 			animationEasing : "easeOutBounce",
 			animateRotate : true,
 			animateScale : false,
-			onAnimationComplete : null
+			onAnimationComplete : null,
+			chartScale : 1,
+			dataLabelVisible : false,
+			dataLabelScale : 1,
+			dataLabelInside : false,
+			dataLabelFontSize : 12,
+			dataLabelFontFamily : "'Arial'",
+			dataLabelFontStyle : "normal",
+			dataLabelFontColor : "#666",
+			dataLabelRotate : false,
 		};
 		
 		var config = (options)? mergeChartConfig(chart.PolarArea.defaults,options) : chart.PolarArea.defaults;
@@ -253,8 +264,17 @@ window.Chart = function(context){
 			animationEasing : "easeOutBounce",
 			animateRotate : true,
 			animateScale : false,
-			onAnimationComplete : null
-		};		
+			onAnimationComplete : null,
+			chartScale : 1,
+			dataLabelVisible : false,
+			dataLabelScale : 1,
+			dataLabelInside : false,
+			dataLabelFontSize : 12,
+			dataLabelFontFamily : "'Arial'",
+			dataLabelFontStyle : "normal",
+			dataLabelFontColor : "#666",
+			dataLabelRotate : false,
+		};
 
 		var config = (options)? mergeChartConfig(chart.Pie.defaults,options) : chart.Pie.defaults;
 		
@@ -273,7 +293,16 @@ window.Chart = function(context){
 			animationEasing : "easeOutBounce",
 			animateRotate : true,
 			animateScale : false,
-			onAnimationComplete : null
+			onAnimationComplete : null,
+			chartScale : 1,
+			dataLabelVisible : false,
+			dataLabelScale : 1,
+			dataLabelInside : false,
+			dataLabelFontSize : 12,
+			dataLabelFontFamily : "'Arial'",
+			dataLabelFontStyle : "normal",
+			dataLabelFontColor : "#666",
+			dataLabelRotate : false,
 		};		
 
 		var config = (options)? mergeChartConfig(chart.Doughnut.defaults,options) : chart.Doughnut.defaults;
@@ -366,8 +395,9 @@ window.Chart = function(context){
 
 		//Check and set the scale
 		if (!config.scaleOverride){
-			
-			calculatedScale = calculateScale(scaleHeight,valueBounds.maxSteps,valueBounds.minSteps,valueBounds.maxValue,valueBounds.minValue,labelTemplateString);
+			// TODO - Replace our commented out valueBounds.minValue with appropriate code elsewhere.
+			// Without this - the smallest segment in a PolarArea is blank.  Lame.
+			calculatedScale = calculateScale(scaleHeight,valueBounds.maxSteps,valueBounds.minSteps,valueBounds.maxValue,0/*valueBounds.minValue*/,labelTemplateString);
 		}
 		else {
 			calculatedScale = {
@@ -379,7 +409,7 @@ window.Chart = function(context){
 			populateLabels(labelTemplateString, calculatedScale.labels,calculatedScale.steps,config.scaleStartValue,config.scaleStepWidth);
 		}
 		
-		scaleHop = maxSize/(calculatedScale.steps);
+		scaleHop = maxSize/(calculatedScale.steps) * config.chartScale;
 
 		//Wrap in an animation loop wrapper
 		animationLoop(config,drawScale,drawAllSegments,ctx);
@@ -406,7 +436,7 @@ window.Chart = function(context){
 				//If the line object is there
 				if (config.scaleShowLine){
 					ctx.beginPath();
-					ctx.arc(width/2, height/2, scaleHop * (i + 1), 0, (Math.PI * 2), true);
+					ctx.arc(width/2, height/2, scaleHop * (i + 1) , 0, (Math.PI * 2), true);
 					ctx.strokeStyle = config.scaleLineColor;
 					ctx.lineWidth = config.scaleLineWidth;
 					ctx.stroke();
@@ -448,9 +478,8 @@ window.Chart = function(context){
 					rotateAnimation = animationDecimal;
 				}
 			}
-
+			// XYZXYZ
 			for (var i=0; i<data.length; i++){
-
 				ctx.beginPath();
 				ctx.arc(width/2,height/2,scaleAnimation * calculateOffset(data[i].value,calculatedScale,scaleHop),startAngle, startAngle + rotateAnimation*angleStep, false);
 				ctx.lineTo(width/2,height/2);
@@ -465,7 +494,77 @@ window.Chart = function(context){
 				}
 				startAngle += rotateAnimation*angleStep;
 			}
+			if( config.dataLabelVisible ) {
+				drawSegmentLabels(animationDecimal);
+			}
 		}
+
+		function drawSegmentLabels (animationDecimal) {
+			var startAngle = -Math.PI/2,
+			angleStep = (Math.PI*2)/data.length,
+			scaleAnimation = 1,
+			rotateAnimation = 1;
+			if (config.animation) {
+				if (config.animateScale) {
+					scaleAnimation = animationDecimal;
+				}
+				if (config.animateRotate){
+					rotateAnimation = animationDecimal;
+				}
+			}
+
+			for (var i=0; i<data.length; i++){
+
+				if( typeof data[i].label != "undefined" &&
+					data[i].label.length > 0 ) {
+					var textAngle = startAngle + ( ( rotateAnimation * angleStep ) / 2 );   // ( ( cumulativeAngle +  ( segmentAngle / 2 ) ) ) - ( 1 * Math.PI / 64 ) ;
+					var textRadius = scaleAnimation * calculateOffset(data[i].value,calculatedScale,scaleHop) / config.chartScale * config.dataLabelScale ;
+					var textX = ( width / 2 ) + Math.cos(textAngle) * textRadius;
+					var textY = ( height / 2 ) + Math.sin(textAngle) * textRadius;
+
+					var textFontColor = data[i].labelFontColor || config.dataLabelFontColor;
+					var textFontSize = data[i].labelFontSize || config.dataLabelFontSize;
+					var textFontStyle = data[i].labelFontStyle || config.dataLabelFontStyle;
+					var textFontFamily = data[i].labelFontFamily || config.dataLabelFontFamily; // Does this make sense to support?
+
+					var textFont = textFontStyle+" "+textFontSize+"px "+textFontFamily;
+
+					var textAlign,
+						textRotation;
+					
+					var labelInside = typeof data[i].labelInside != "undefined" ? data[i].labelInside : config.dataLabelInside;
+
+					if( config.dataLabelRotate ) {
+						textRotation = textAngle;
+					} else {
+						textRotation = 0;
+					}
+
+					if( labelInside ) {
+						textAlign = "right";
+						if( textX < ( width / 2 - ( width / 64 ) ) ) {
+							textAlign = "left";
+							if( textRotation != "0" ) {
+								textRotation -= Math.PI;
+							}
+						}
+					} else {
+						textAlign = "left";
+						if( textX < ( width / 2 - ( width / 64 ) ) ) {
+							textAlign = "right";
+							if( textRotation != 0 ) {
+								textRotation += Math.PI;
+							}
+						}
+					}
+					
+					drawLabel(ctx,data[i].label,textX,textY,textAlign,textRotation,textFontColor,textFont);
+				}
+				
+				startAngle += rotateAnimation*angleStep;
+			}
+		}
+
 		function getValueBounds() {
 			var upperValue = Number.MIN_VALUE;
 			var lowerValue = Number.MAX_VALUE;
@@ -720,38 +819,88 @@ window.Chart = function(context){
 			for (var i=0; i<data.length; i++){
 				var segmentAngle = rotateAnimation * ((data[i].value/segmentTotal) * (Math.PI*2));
 				ctx.beginPath();
-				ctx.arc(width/2,height/2,scaleAnimation * pieRadius / 2,cumulativeAngle,cumulativeAngle + segmentAngle);
+				ctx.arc(width/2,height/2,scaleAnimation * pieRadius * config.chartScale ,cumulativeAngle,cumulativeAngle + segmentAngle);
 				ctx.lineTo(width/2,height/2);
 				ctx.closePath();
 				ctx.fillStyle = data[i].color;
 				ctx.fill();
 
-				// XYZXYZ
-				if( typeof data[i].label != "undefined" ) {
-					var textAngle = ( ( cumulativeAngle +  ( segmentAngle / 2 ) ) ) - ( 1 * Math.PI / 64 ) ;
-					var degAngle = Math.floor(textAngle / Math.PI * 2 * 360);
-					var textx = ( width/2 ) + Math.cos(textAngle) * pieRadius * .75;
-					var texty = ( height/2 ) + Math.sin(textAngle) * pieRadius * .75;
-					// ctx.fillStyle = "#000000";
-					if( textx < ( width/2) ) {
-						ctx.textAlign = "right";
-					} else if ( /* texty > ( height/2 ) && */
-								Math.abs( textx - ( width/2 ) ) < ( width / 8 ) ) {
-						ctx.textAlign = "center";
-					} else {
-						ctx.textAlign = "left";
-					}
-					ctx.fillText(data[i].label,textx,texty)
-				}
-				
 				if(config.segmentShowStroke){
 					ctx.lineWidth = config.segmentStrokeWidth;
 					ctx.strokeStyle = config.segmentStrokeColor;
 					ctx.stroke();
 				}
+				
 				cumulativeAngle += segmentAngle;
-			}			
-		}		
+			}
+			if( config.dataLabelVisible ) {
+				drawPieLabels(animationDecimal);
+			}
+		}
+
+		function drawPieLabels (animationDecimal) {
+			var cumulativeAngle = -Math.PI/2,
+			scaleAnimation = 1,
+			rotateAnimation = 1;
+			if (config.animation) {
+				if (config.animateScale) {
+					scaleAnimation = animationDecimal;
+				}
+				if (config.animateRotate){
+					rotateAnimation = animationDecimal;
+				}
+			}
+			for (var i=0; i<data.length; i++){
+				var segmentAngle = rotateAnimation * ((data[i].value/segmentTotal) * (Math.PI*2));
+				
+				if( typeof data[i].label != "undefined" &&
+					data[i].label.length > 0 ) {
+					var textAngle = ( ( cumulativeAngle +  ( segmentAngle / 2 ) ) ) - ( 1 * Math.PI / 64 ) ;
+					var textX = ( width / 2 ) + Math.cos(textAngle) * pieRadius * config.dataLabelScale;
+					var textY = ( height / 2 ) + Math.sin(textAngle) * pieRadius * config.dataLabelScale;
+
+					var textFontColor = data[i].labelFontColor || config.dataLabelFontColor;
+					var textFontSize = data[i].labelFontSize || config.dataLabelFontSize;
+					var textFontStyle = data[i].labelFontStyle || config.dataLabelFontStyle;
+					var textFontFamily = data[i].labelFontFamily || config.dataLabelFontFamily; // Does this make sense to support?
+
+					var textFont = textFontStyle+" "+textFontSize+"px "+textFontFamily;
+
+					var textAlign,
+						textRotation;
+					
+					var labelInside = typeof data[i].labelInside != "undefined" ? data[i].labelInside : config.dataLabelInside;
+
+					if( config.dataLabelRotate ) {
+						textRotation = textAngle;
+					} else {
+						textRotation = 0;
+					}
+
+					if( labelInside ) {
+						textAlign = "right";
+						if( textX < ( width / 2 - ( width / 64 ) ) ) {
+							textAlign = "left";
+							if( textRotation != "0" ) {
+								textRotation -= Math.PI;
+							}
+						}
+					} else {
+						textAlign = "left";
+						if( textX < ( width / 2 - ( width / 64 ) ) ) {
+							textAlign = "right";
+							if( textRotation != 0 ) {
+								textRotation += Math.PI;
+							}
+						}
+					}
+					
+					drawLabel(ctx,data[i].label,textX,textY,textAlign,textRotation,textFontColor,textFont);
+				}
+				
+				cumulativeAngle += segmentAngle;
+			}
+		}
 	}
 
 	var Doughnut = function(data,config,ctx){
@@ -785,8 +934,8 @@ window.Chart = function(context){
 			for (var i=0; i<data.length; i++){
 				var segmentAngle = rotateAnimation * ((data[i].value/segmentTotal) * (Math.PI*2));
 				ctx.beginPath();
-				ctx.arc(width/2,height/2,scaleAnimation * doughnutRadius,cumulativeAngle,cumulativeAngle + segmentAngle,false);
-				ctx.arc(width/2,height/2,scaleAnimation * cutoutRadius,cumulativeAngle + segmentAngle,cumulativeAngle,true);
+				ctx.arc(width/2,height/2,scaleAnimation * doughnutRadius * config.chartScale,cumulativeAngle,cumulativeAngle + segmentAngle,false);
+				ctx.arc(width/2,height/2,scaleAnimation * cutoutRadius * config.chartScale,cumulativeAngle + segmentAngle,cumulativeAngle,true);
 				ctx.closePath();
 				ctx.fillStyle = data[i].color;
 				ctx.fill();
@@ -798,7 +947,74 @@ window.Chart = function(context){
 				}
 				cumulativeAngle += segmentAngle;
 			}			
-		}			
+			if( config.dataLabelVisible ) {
+				drawPieLabels(animationDecimal);
+			}
+		}
+
+		function drawPieLabels (animationDecimal) {
+			var cumulativeAngle = -Math.PI/2,
+			scaleAnimation = 1,
+			rotateAnimation = 1;
+			if (config.animation) {
+				if (config.animateScale) {
+					scaleAnimation = animationDecimal;
+				}
+				if (config.animateRotate){
+					rotateAnimation = animationDecimal;
+				}
+			}
+			for (var i=0; i<data.length; i++){
+				var segmentAngle = rotateAnimation * ((data[i].value/segmentTotal) * (Math.PI*2));
+				
+				if( typeof data[i].label != "undefined" &&
+					data[i].label.length > 0 ) {
+					var textAngle = ( ( cumulativeAngle +  ( segmentAngle / 2 ) ) ) - ( 1 * Math.PI / 64 ) ;
+					var textX = ( width / 2 ) + Math.cos(textAngle) * doughnutRadius * config.dataLabelScale;
+					var textY = ( height / 2 ) + Math.sin(textAngle) * doughnutRadius * config.dataLabelScale;
+
+					var textFontColor = data[i].labelFontColor || config.dataLabelFontColor;
+					var textFontSize = data[i].labelFontSize || config.dataLabelFontSize;
+					var textFontStyle = data[i].labelFontStyle || config.dataLabelFontStyle;
+					var textFontFamily = data[i].labelFontFamily || config.dataLabelFontFamily; // Does this make sense to support?
+
+					var textFont = textFontStyle+" "+textFontSize+"px "+textFontFamily;
+
+					var textAlign,
+						textRotation;
+					
+					var labelInside = typeof data[i].labelInside != "undefined" ? data[i].labelInside : config.dataLabelInside;
+
+					if( config.dataLabelRotate ) {
+						textRotation = textAngle;
+					} else {
+						textRotation = 0;
+					}
+
+					if( labelInside ) {
+						textAlign = "right";
+						if( textX < ( width / 2 - ( width / 64 ) ) ) {
+							textAlign = "left";
+							if( textRotation != "0" ) {
+								textRotation -= Math.PI;
+							}
+						}
+					} else {
+						textAlign = "left";
+						if( textX < ( width / 2 - ( width / 64 ) ) ) {
+							textAlign = "right";
+							if( textRotation != 0 ) {
+								textRotation += Math.PI;
+							}
+						}
+					}
+					
+					drawLabel(ctx,data[i].label,textX,textY,textAlign,textRotation,textFontColor,textFont);
+				}
+				
+				cumulativeAngle += segmentAngle;
+			}
+		}
 		
 		
 		
@@ -1408,37 +1624,75 @@ window.Chart = function(context){
 	}
 	
 	//Javascript micro templating by John Resig - source at http://ejohn.org/blog/javascript-micro-templating/
-	  var cache = {};
-	 
-	  function tmpl(str, data){
-	    // Figure out if we're getting a template, or if we need to
-	    // load the template - and be sure to cache the result.
-	    var fn = !/\W/.test(str) ?
-	      cache[str] = cache[str] ||
-	        tmpl(document.getElementById(str).innerHTML) :
-	     
-	      // Generate a reusable function that will serve as a template
-	      // generator (and which will be cached).
-	      new Function("obj",
-	        "var p=[],print=function(){p.push.apply(p,arguments);};" +
-	       
-	        // Introduce the data as local variables using with(){}
-	        "with(obj){p.push('" +
-	       
-	        // Convert the template into pure JavaScript
-	        str
-	          .replace(/[\r\t\n]/g, " ")
-	          .split("<%").join("\t")
-	          .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-	          .replace(/\t=(.*?)%>/g, "',$1,'")
-	          .split("\t").join("');")
-	          .split("%>").join("p.push('")
-	          .split("\r").join("\\'")
-	      + "');}return p.join('');");
-	   
-	    // Provide some basic currying to the user
-	    return data ? fn( data ) : fn;
-	  };
+	var cache = {};
+
+	function tmpl(str, data){
+		// Figure out if we're getting a template, or if we need to
+		// load the template - and be sure to cache the result.
+		var fn = !/\W/.test(str) ?
+			cache[str] = cache[str] ||
+			tmpl(document.getElementById(str).innerHTML) :
+
+		// Generate a reusable function that will serve as a template
+		// generator (and which will be cached).
+		new Function("obj",
+			"var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+			// Introduce the data as local variables using with(){}
+			"with(obj){p.push('" +
+
+			// Convert the template into pure JavaScript
+			str
+			.replace(/[\r\t\n]/g, " ")
+			.split("<%").join("\t")
+			.replace(/((^|%>)[^\t]*)'/g, "$1\r")
+			.replace(/\t=(.*?)%>/g, "',$1,'")
+			.split("\t").join("');")
+			.split("%>").join("p.push('")
+			.split("\r").join("\\'")
+			+ "');}return p.join('');"
+		);
+
+		// Provide some basic currying to the user
+		return data ? fn( data ) : fn;
+	};
+
+
+	function drawLabel(context,text,x,y,align,rotation,color,font) {
+		
+		if( typeof labelCanvas == 'undefined' ) {
+			labelCanvas = document.createElement('canvas');
+			labelContext = labelCanvas.getContext('2d');
+		}
+		
+		text = text || '';
+		
+		// Force Declaration?  Or be aware of config ?
+		// context.font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
+		/*
+		align = align || 'left';
+		rotation = rotation || 0;
+		color = color || '#000000';
+		font = font || 'normal 12px Arial';
+		*/
+	
+		context.save();
+		
+		context.textAlign = align;
+		context.fillStyle = color;
+		context.font = font;
+
+		context.translate(x,y);
+		context.rotate(rotation);
+		context.translate(-x,-y);
+		
+		context.fillText(text,x,y);
+
+		context.rotate( rotation * -1 );
+		context.restore();
+
+	}
+
 }
 
 
