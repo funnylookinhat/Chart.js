@@ -26,6 +26,14 @@
 		</style>
 
 		<div class="chart-wrapper">
+			<canvas id="line" width="580" height="380"></canvas>
+		</div>
+
+		<div class="chart-wrapper">
+			<canvas id="bar" width="580" height="380"></canvas>
+		</div>
+
+		<div class="chart-wrapper">
 			<canvas id="pie" width="580" height="380" rel="3"></canvas>
 		</div>
 
@@ -62,9 +70,11 @@
 			];
 
 			var options = {
-				chartScale: 0.8,
-				dataLabelVisible: true,
+				chartScale: 0.5,
+				dataLabelVisible: true
 			};
+
+			var testLineData = {"labels":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"datasets":[{"fillColor":"rgba(5,125,159,0.4)","strokeColor":"rgba(5,125,159,0.5)","label":"Income","data":[9570.56,8445.42,12169.34,12856.5,16408.56,10876.68,13411.4,13541.52,7830.3,7253.9,6709.9,12415.1]},{"fillColor":"rgba(35,141,67,0.6)","strokeColor":"rgba(35,141,67,0.8)","label":"Gross Income","data":[4250.85,3749.58,5404.7,5707.27,7289.71,4831.79,5954.97,6013.16,3474.31,3221.53,2980.23,5511.46]},{"fillColor":"rgba(255,35,0,0.7)","strokeColor":"rgba(255,35,0,0.8)","label":"Expenses","data":[1362.1,1390.3,1997.27,1322.55,2330.34,2247.01,1958.94,2493.46,1719.64,1234.05,1828.59,1303.02]}]};
 
 			function generateRoundData(count, startVal, incUp, incDown) {
 				var data = [];
@@ -92,6 +102,23 @@
 				return data;
 			}
 
+			function generateLine() {
+				var lineChart = new Chart($('#line').get(0).getContext('2d')).Line(testLineData,{
+					pointDot: false,
+					legendVisible: true,
+					legendWidth: 0.2,
+					legendFontSize: 10,
+					legendPosition: "right",
+					legendPadding: 0
+				});
+			}
+
+			function generateBar() {
+				var barChart = new Chart($('#bar').get(0).getContext('2d')).Bar(testLineData,{
+					legendVisible: true,
+				});
+			}
+
 			function generatePie() {
 				var pieChart = new Chart($('#pie').get(0).getContext('2d')).Pie(generateRoundData(parseInt($('#pie').attr('rel')),50,1.4,.8),options);
 				$('#pie').attr('rel',parseInt($('#pie').attr('rel'))+2);
@@ -108,6 +135,9 @@
 			}
 
 			$(function() {
+				generateLine();
+				generateBar();
+
 				generatePie();
 				$('#pie').click(function() {
 					generatePie();

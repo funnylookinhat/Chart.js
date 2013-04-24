@@ -5,6 +5,9 @@
  * Copyright 2013 Nick Downie
  * Released under the MIT license
  * https://github.com/nnnick/Chart.js/blob/master/LICENSE.md
+ *
+ * CHANGES MADE - TODO - DOC NEW AUTHOR David Overcash
+ * 
  */
 
 //Define the global Chart Variable as a class.
@@ -12,9 +15,6 @@ window.Chart = function(context){
 
 	var chart = this;
 	
-	var labelCanvas;
-	var labelContext;
-
 	//Easing functions adapted from Robert Penner's easing equations
 	//http://www.robertpenner.com/easing/
 	
@@ -340,7 +340,17 @@ window.Chart = function(context){
 			animation : true,
 			animationSteps : 60,
 			animationEasing : "easeOutQuart",
-			onAnimationComplete : null
+			onAnimationComplete : null,
+			legendVisible : false,
+			legendPosition : "right",
+			legendWidth : 0.33,
+			legendPadding : 5,
+			legendBorderColor : "rgba(33,33,33,1.0)",
+			legendBackgroundColor : "rgba(240,240,240,0.75)",
+			legendFontSize : 12,
+			legendFontFamily : "'Arial'",
+			legendFontStyle : "normal",
+			legendFontColor : "#666"
 		};		
 		var config = (options) ? mergeChartConfig(chart.Line.defaults,options) : chart.Line.defaults;
 		
@@ -372,7 +382,17 @@ window.Chart = function(context){
 			animation : true,
 			animationSteps : 60,
 			animationEasing : "easeOutQuart",
-			onAnimationComplete : null
+			onAnimationComplete : null,
+			legendVisible : false,
+			legendPosition : "right",
+			legendWidth : 0.33,
+			legendPadding : 5,
+			legendBorderColor : "rgba(33,33,33,1.0)",
+			legendBackgroundColor : "rgba(240,240,240,0.75)",
+			legendFontSize : 12,
+			legendFontFamily : "'Arial'",
+			legendFontStyle : "normal",
+			legendFontColor : "#666"
 		};		
 		var config = (options) ? mergeChartConfig(chart.Bar.defaults,options) : chart.Bar.defaults;
 		
@@ -1084,6 +1104,19 @@ window.Chart = function(context){
 					}
 				}
 			}
+
+			if( config.legendVisible ) {
+				var legendWidth = config.legendWidth;
+				var legendPosition = config.legendPosition;
+				var legendBackgroundColor = config.legendBackgroundColor;
+				var legendBorderColor = config.legendBorderColor;
+				var legendFontSize = config.legendFontSize;
+				var legendFontStyle = config.legendFontStyle;
+				var legendFontFamily = config.legendFontFamily;
+				var legendFontColor = config.legendFontColor;
+				var legendPadding = config.legendPadding;
+				drawLegend(ctx,data.datasets,yAxisPosX,xAxisLength,legendWidth,legendPadding,legendPosition,legendBackgroundColor,legendBorderColor,legendFontColor,legendFontSize,legendFontStyle,legendFontFamily)
+			}
 			
 			function yPos(dataSet,iteration){
 				return xAxisPosY - animPc*(calculateOffset(data.datasets[dataSet].data[iteration],calculatedScale,scaleHop));			
@@ -1092,6 +1125,7 @@ window.Chart = function(context){
 				return yAxisPosX + (valueHop * iteration);
 			}
 		}
+
 		function drawScale(){
 			//X axis line
 			ctx.lineWidth = config.scaleLineWidth;
@@ -1299,6 +1333,18 @@ window.Chart = function(context){
 				}
 			}
 			
+			if( config.legendVisible ) {
+				var legendWidth = config.legendWidth;
+				var legendPosition = config.legendPosition;
+				var legendBackgroundColor = config.legendBackgroundColor;
+				var legendBorderColor = config.legendBorderColor;
+				var legendFontSize = config.legendFontSize;
+				var legendFontStyle = config.legendFontStyle;
+				var legendFontFamily = config.legendFontFamily;
+				var legendFontColor = config.legendFontColor;
+				var legendPadding = config.legendPadding;
+				drawLegend(ctx,data.datasets,yAxisPosX,xAxisLength,legendWidth,legendPadding,legendPosition,legendBackgroundColor,legendBorderColor,legendFontColor,legendFontSize,legendFontStyle,legendFontFamily)
+			}
 		}
 		function drawScale(){
 			//X axis line
@@ -1691,6 +1737,90 @@ window.Chart = function(context){
 		context.rotate( rotation * -1 );
 		context.restore();
 
+	}
+
+	// Separate font values because fontSize is used for scaling / positioning
+	function drawLegend(context,datasets,chartLeftX,chartWidth,width,padding,position,background,border,color,fontSize,fontStyle,fontFamily) {
+		var totalWidth = context.canvas.width;
+		var totalHeight = context.canvas.height;
+
+		// This might have to be a passed parameter.
+		var legendPadding = 5;
+		var legendWidth = Math.floor(totalWidth * width);
+		if( legendWidth % 2 == 1 ) {
+			legendWidth++;
+		}
+		var legendX;
+		var legendY = padding;
+		var linePadding = Math.floor(fontSize / 4);
+
+		var linePaddingTop = Math.floor(fontSize / 4) + ( ( fontSize / 4 ) % 2 );
+		var linePaddingBottom = Math.floor( fontSize / 4 );
+
+		var legendHeight = linePaddingTop + linePaddingBottom;
+		
+		var legendFont = fontStyle+" "+fontSize+"px "+fontFamily;
+
+		for( var i = 0; i < datasets.length; i++ ) {
+			if( typeof datasets[i].label != "undefined" &&
+				datasets[i].label.length > 0 ) {
+				legendHeight += ( fontSize + linePaddingTop + linePaddingBottom );
+			}
+		}
+
+		if( position == "left" ) {
+			legendX = chartLeftX + padding;
+		} else if ( position == "center" ) {
+			legendX = chartLeftX + Math.floor( chartWidth / 2) - Math.floor( legendWidth / 2 );
+		} else {
+			// Right = Default / Fallback
+			legendX = chartLeftX + chartWidth - legendWidth - padding;
+		}
+
+		// Draw Border + Background
+		context.beginPath();
+		context.lineJoin = "miter";
+		context.strokeStyle = border;
+		context.lineWidth = 1;
+		context.rect(legendX,legendY,legendWidth,legendHeight);
+		context.stroke();
+
+		context.beginPath();
+		context.lineJoin = "miter";
+		context.fillStyle = background;
+		context.rect((legendX + 1),(legendY + 1),(legendWidth - 2),(legendHeight - 2));
+		context.fill();
+
+		// Iterate our datasets.
+		var linePositionX = legendX + linePaddingTop;
+		var linePositionY = legendY + linePaddingTop + linePaddingBottom;
+		for( var i = 0; i < datasets.length; i++ ) {
+			if( typeof datasets[i].label != "undefined" &&
+				datasets[i].label.length > 0 ) {
+				// Box
+				context.beginPath();
+				context.lineJoin = "miter";
+				context.fillStyle = datasets[i].fillColor;
+				context.rect( (linePositionX),(linePositionY),( fontSize),( fontSize ));
+				context.fill();
+
+				context.beginPath();
+				context.lineJoin = "miter";
+				context.strokeStyle = datasets[i].strokeColor;
+				context.lineWidth = 1;
+				context.rect(linePositionX,linePositionY,fontSize,fontSize);
+				context.stroke();
+
+				// Label
+				context.textBaseline = "middle";
+				context.textAlign = "left";
+				context.fillStyle = color;
+				context.font = legendFont;
+				context.fillText(datasets[i].label,( linePositionX + fontSize + linePaddingTop + linePaddingBottom ), ( linePositionY + linePaddingTop + linePaddingBottom ) );
+
+				linePositionY += ( linePaddingTop + linePaddingBottom + fontSize )
+			}
+		}
 	}
 
 }
