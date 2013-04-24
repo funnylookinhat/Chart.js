@@ -34,7 +34,7 @@
 		</div>
 
 		<div class="chart-wrapper">
-			<canvas id="pie" width="580" height="380" rel="3"></canvas>
+			<canvas id="pie" width="580" height="380" rel="6"></canvas>
 		</div>
 
 		<div class="chart-wrapper">
@@ -42,7 +42,7 @@
 		</div>
 
 		<div class="chart-wrapper">
-			<canvas id="doughnut" width="580" height="380" rel="3"></canvas>
+			<canvas id="doughnut" width="580" height="380" rel="4"></canvas>
 		</div>
 
 
@@ -87,7 +87,7 @@
 					data.push({
 						value: startVal,
 						color: colors[ i % colors.length ],
-						label: items[ i % items.length ]+' ('+startVal+')'//+' $'+parseFloat(maxVal).toFixed(2)
+						label: items[ i % items.length ]//+' ('+startVal+')'//+' $'+parseFloat(maxVal).toFixed(2)
 					});
 				}
 				for( var i = 0; i < ( Math.floor( count / 2 ) ); i++ ) {
@@ -95,7 +95,7 @@
 					data.push({
 						value: startVal,
 						color: colors[ ( i + ( Math.floor( count / 2 ) + (count % 2) ) ) % colors.length ],
-						label: items[ ( i + ( Math.floor( count / 2 ) + (count % 2) ) ) % items.length ]+' ('+startVal+')'//+' $'+parseFloat(maxVal).toFixed(2)
+						label: items[ ( i + ( Math.floor( count / 2 ) + (count % 2) ) ) % items.length ]//+' ('+startVal+')'//+' $'+parseFloat(maxVal).toFixed(2)
 					});
 				}
 
@@ -120,17 +120,34 @@
 			}
 
 			function generatePie() {
-				var pieChart = new Chart($('#pie').get(0).getContext('2d')).Pie(generateRoundData(parseInt($('#pie').attr('rel')),50,1.4,.8),options);
+				var pieChart = new Chart($('#pie').get(0).getContext('2d')).Pie(generateRoundData(parseInt($('#pie').attr('rel')),50,1.4,.8),{
+					chartScale: 0.6,
+					dataLabelVisible: true,
+					dataLabelScale: 0.65,
+					dataLabelRotate: true
+				});
 				$('#pie').attr('rel',parseInt($('#pie').attr('rel'))+2);
 			}
 
 			function generatePolar() {
-				var polarChart = new Chart($('#polar').get(0).getContext('2d')).PolarArea(generateRoundData(parseInt($('#polar').attr('rel')),10,1.4,.8),options);
+				var polarChart = new Chart($('#polar').get(0).getContext('2d')).PolarArea(generateRoundData(parseInt($('#polar').attr('rel')),10,1.4,.8),{
+					chartScale: 0.6,
+					dataLabelVisible: true,
+					dataLabelScale: 0.65,
+					dataLabelRotate: false
+				});
 				$('#polar').attr('rel',parseInt($('#polar').attr('rel'))+2);
 			}
 
 			function generateDoughnut() {
-				var doughnutChart = new Chart($('#doughnut').get(0).getContext('2d')).Doughnut(generateRoundData(parseInt($('#doughnut').attr('rel')),50),options);
+				var doughnutChart = new Chart($('#doughnut').get(0).getContext('2d')).Doughnut(generateRoundData(parseInt($('#doughnut').attr('rel')),50),{
+					chartScale: 0.8,
+					dataLabelVisible: true,
+					dataLabelScale: 0.71,
+					dataLabelRotate: false,
+					dataLabelInside: true,
+					dataLabelFontColor: "#000000"
+				});
 				$('#doughnut').attr('rel',parseInt($('#doughnut').attr('rel'))+2);
 			}
 
